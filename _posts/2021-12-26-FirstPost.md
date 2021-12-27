@@ -4,9 +4,6 @@ layout: post
 description: Just first post
 categories: [markdown]
 title: First Blog Post
-badges: true
-comments: true
-categories: [fastpages, general]
 ---
 
 # First Blog Post
