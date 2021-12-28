@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="twitter:card" content="summary_large_image" /><!-- Begin Jekyll SEO tag v2.7.1 -->
+<title>Symbolic Euler’s Method | J&amp;J Engineering Blog</title>
+<meta name="generator" content="Jekyll v4.1.1" />
+<meta property="og:title" content="Symbolic Euler’s Method" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Applying Euler’s Method to ODE , but with a twist: we’re going to call method with Symbolic variables" />
+<meta property="og:description" content="Applying Euler’s Method to ODE , but with a twist: we’re going to call method with Symbolic variables" />
+<link rel="canonical" href="https://gjunqueira-sys.github.io/J-J-Engineering-Blog/jupyter/math/calculus/symbolics/julialang/2021/12/28/EulersMethod.html" />
+<meta property="og:url" content="https://gjunqueira-sys.github.io/J-J-Engineering-Blog/jupyter/math/calculus/symbolics/julialang/2021/12/28/EulersMethod.html" />
+<meta property="og:site_name" content="J&amp;J Engineering Blog" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2021-12-28T00:00:00-06:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Symbolic Euler’s Method" />
+<script type="application/ld+json">
+{"url":"https://gjunqueira-sys.github.io/J-J-Engineering-Blog/jupyter/math/calculus/symbolics/julialang/2021/12/28/EulersMethod.html","@type":"BlogPosting","headline":"Symbolic Euler’s Method","dateModified":"2021-12-28T00:00:00-06:00","datePublished":"2021-12-28T00:00:00-06:00","mainEntityOfPage":{"@type":"WebPage","@id":"https://gjunqueira-sys.github.io/J-J-Engineering-Blog/jupyter/math/calculus/symbolics/julialang/2021/12/28/EulersMethod.html"},"description":"Applying Euler’s Method to ODE , but with a twist: we’re going to call method with Symbolic variables","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/J-J-Engineering-Blog/assets/css/style.css"><link type="application/atom+xml" rel="alternate" href="https://gjunqueira-sys.github.io/J-J-Engineering-Blog/feed.xml" title="J&amp;J Engineering Blog" /><link rel="shortcut icon" type="image/x-icon" href="/J-J-Engineering-Blog/images/favicon.ico"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Primer/15.2.0/primer.css" integrity="sha512-xTz2ys4coGAOz8vuV1NcQBkgVmKhsSEtjbqyMJbBHRplFuvKIUo6xhLHpAyPt9mfR6twHJgn9OgVLuqOvjeBhg==" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css" integrity="sha512-1PKOgIY59xJ8Co8+NE6FZ+LOAZKjy+KY8iq0G4B3CyeY6wYHN3yt9PW0XpSriVlkMXe40PTKnXrLnZ9+fkDaog==" crossorigin="anonymous" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.css" integrity="sha512-h7nl+xz8wgDlNM4NqKEM4F1NkIRS17M9+uJwIGwuo8vGqIl4BhuCKdxjWEINm+xyrUjNCnK5dCrhM0sj+wTIXw==" crossorigin="anonymous" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/katex.min.js" integrity="sha512-/CMIhXiDA3m2c9kzRyd97MTb3MC6OVnx4TElQ7fkkoRghwDf6gi41gaT1PwF270W6+J60uTmwgeRpNpJdRV6sg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js" integrity="sha512-Do7uJAaHZm5OLrIv/yN4w0iG1dbu01kzdMNnFfu/mAqgUk6Nniv2JYHcwH+cNwjqgLcqcuBBk+JRvprLVI8azg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha512-0doc9hKxR3PYwso42RD1p5ySZpzzuDiOwMrdCEh2WdJZCjcmFKc/wEnL+z8fBQrnHoiNWbo+3fiGkOYXBdQp4A==" crossorigin="anonymous"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement( document.body, {
+        delimiters: [
+            {left: "$$", right: "$$", display: true},
+            {left: "[%", right: "%]", display: true},
+            {left: "$", right: "$", display: false}
+        ]}
+        );
+    });
+    </script>
+
+
+<script>
+function wrap_img(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading") {
+        var elements = document.querySelectorAll(".post img");
+        Array.prototype.forEach.call(elements, function(el, i) {
+            if (el.getAttribute("title") && (el.className != "emoji")) {
+                const caption = document.createElement('figcaption');
+                var node = document.createTextNode(el.getAttribute("title"));
+                caption.appendChild(node);
+                const wrapper = document.createElement('figure');
+                wrapper.className = 'image';
+                el.parentNode.insertBefore(wrapper, el);
+                el.parentNode.removeChild(el);
+                wrapper.appendChild(el);
+                wrapper.appendChild(caption);
+            }
+        });
+    } else { document.addEventListener('DOMContentLoaded', fn); }
+}
+window.onload = wrap_img;
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+    // add link icon to anchor tags
+    var elem = document.querySelectorAll(".anchor-link")
+    elem.forEach(e => (e.innerHTML = '<i class="fas fa-link fa-xs"></i>'));
+    });
+</script>
+</head>
+<body><header class="site-header">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/J-J-Engineering-Blog/">J&amp;J Engineering Blog</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"><a class="page-link" href="/J-J-Engineering-Blog/about/">About Me</a><a class="page-link" href="/J-J-Engineering-Blog/search/">Search</a><a class="page-link" href="/J-J-Engineering-Blog/categories/">Tags</a></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Symbolic Euler&#39;s Method</h1><p class="page-description">Applying Euler's Method to ODE , but with a twist: we're going to call method with Symbolic variables</p><p class="post-meta post-meta-title"><time class="dt-published" datetime="2021-12-28T00:00:00-06:00" itemprop="datePublished">
+        Dec 28, 2021
+      </time>
+       • <span class="read-time" title="Estimated read time">
+    
+    
+      3 min read
+    
+</span></p>
+
+    
+      <p class="category-tags"><i class="fas fa-tags category-tags-icon"></i></i> 
+      
+        <a class="category-tags-link" href="/J-J-Engineering-Blog/categories/#jupyter">jupyter</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/J-J-Engineering-Blog/categories/#math">math</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/J-J-Engineering-Blog/categories/#calculus">calculus</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/J-J-Engineering-Blog/categories/#symbolics">symbolics</a>
+        &nbsp;
+      
+        <a class="category-tags-link" href="/J-J-Engineering-Blog/categories/#julialang">julialang</a>
+        
+      
+      </p>
+    
+
+    
+      
+        <div class="pb-5 d-flex flex-justify-center">
+          <div class="px-2">
+
+    <a href="https://github.com/gjunqueira-sys/J-J-Engineering-Blog/tree/master/_notebooks/2021-12-28-EulersMethod.ipynb" role="button" target="_blank">
+<img class="notebook-badge-image" src="/J-J-Engineering-Blog/assets/badges/github.svg" alt="View On GitHub">
+    </a>
+</div>
+
+          <div class="px-2">
+    <a href="https://mybinder.org/v2/gh/gjunqueira-sys/J-J-Engineering-Blog/master?filepath=_notebooks%2F2021-12-28-EulersMethod.ipynb" target="_blank">
+        <img class="notebook-badge-image" src="/J-J-Engineering-Blog/assets/badges/binder.svg" alt="Open In Binder"/>
+    </a>
+</div>
+
+          <div class="px-2">
+    <a href="https://colab.research.google.com/github/gjunqueira-sys/J-J-Engineering-Blog/blob/master/_notebooks/2021-12-28-EulersMethod.ipynb" target="_blank">
+        <img class="notebook-badge-image" src="/J-J-Engineering-Blog/assets/badges/colab.svg" alt="Open In Colab"/>
+    </a>
+</div>
+          <div class="px-2">
+  <a href="https://deepnote.com/launch?url=https%3A%2F%2Fgithub.com%2Fgjunqueira-sys%2FJ-J-Engineering-Blog%2Fblob%2Fmaster%2F_notebooks%2F2021-12-28-EulersMethod.ipynb" target="_blank">
+      <img class="notebook-badge-image" src="/J-J-Engineering-Blog/assets/badges/deepnote.svg" alt="Launch in Deepnote"/>
+  </a>
+</div>
+
+        </div>
+      </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    <ul id="toc" class="section-nav">
+<li class="toc-entry toc-h2"><a href="#Appply-Euler's-method-for-the-following-First-Order-Differential-Equation:">Appply Euler&#39;s method for the following First-Order Differential Equation: </a></li>
+<li class="toc-entry toc-h2"><a href="#Definition-of-Euler's-Method-function:">Definition of Euler&#39;s Method function: </a>
+<ul>
+<li class="toc-entry toc-h3"><a href="#We-can-also-use-Symbolics-by-passing-Symbolics-variables-to-the-function:">We can also use Symbolics by passing Symbolics variables to the function: </a></li>
+</ul>
+</li>
+</ul><!--
+#################################################
+### THIS FILE WAS AUTOGENERATED! DO NOT EDIT! ###
+#################################################
+# file to edit: _notebooks/2021-12-28-EulersMethod.ipynb
+-->
+
+<div class="container" id="notebook-container">
+        
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<details class="description" open="">
+      <summary class="btn btn-sm" data-open="Hide Code" data-close="Show Code"></summary>
+        <p></p>
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-julia"><pre><span></span><span class="c"># load dependacies</span>
+
+<span class="k">using</span> <span class="n">MyCalculus</span>
+<span class="k">using</span> <span class="n">Plots</span>
+<span class="k">using</span> <span class="n">Symbolics</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+    </details>
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Appply-Euler's-method-for-the-following-First-Order-Differential-Equation:">
+<a class="anchor" href="#Appply-Euler's-method-for-the-following-First-Order-Differential-Equation:" aria-hidden="true"><span class="octicon octicon-link"></span></a>Appply Euler's method for the following First-Order Differential Equation:<a class="anchor-link" href="#Appply-Euler's-method-for-the-following-First-Order-Differential-Equation:"> </a>
+</h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>$fun(t, y) = y^2 -t$</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">fun</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="o">=</span> <span class="n">y</span><span class="o">^</span><span class="mi">2</span> <span class="o">-</span><span class="n">t</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea ">
+<pre>fun (generic function with 1 method)</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Definition-of-Euler's-Method-function:">
+<a class="anchor" href="#Definition-of-Euler's-Method-function:" aria-hidden="true"><span class="octicon octicon-link"></span></a>Definition of Euler's Method function:<a class="anchor-link" href="#Definition-of-Euler's-Method-function:"> </a>
+</h2>
+<p>$EulerMethod(f, x₀, y₀, step= 0.5, n=100.0)$</p>
+<p>Function to approximate solution to an ordinary differential equation using the Euler's Method.
+dy/dx = f(x, y) where y(x₀) = y₀ and x₀ = x₀.</p>
+<p><strong>Arguments</strong></p>
+<ul>
+<li>$f:$ function to approximate solution to, of the form f(x, y). 
+<pre><code>  This is the right hand side of the differential equation.</code></pre>
+</li>
+<li>$x₀:$ initial $x$ value condition</li>
+<li>$y₀:$ initial $y$ value condition</li>
+<li>$step:$ step size for the Euler's Method</li>
+<li>$n:$ number of steps to take</li>
+</ul>
+<p><strong>Returns</strong></p>
+<ul>
+<li>$x:$ array of x values</li>
+<li>$y:$ array of y values</li>
+</ul>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">EulerMethod</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea ">
+<pre>([-1.0, -0.5, 0.0, 0.5, 1.0], [-0.5, 0.125, 0.3828125, 0.456085205078125, 0.31009206222370267])</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span><span class="mf">0.5</span><span class="p">),</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">framestyle</span> <span class="o">=</span> <span class="o">:</span><span class="p">,</span> <span class="n">ylabel</span> <span class="o">=</span> <span class="s">"y"</span><span class="p">,</span> <span class="n">xlabel</span> <span class="o">=</span> <span class="s">"x"</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+<div class="output_html rendered_html output_subarea ">
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="600" height="400" viewbox="0 0 2400 1600">
+<defs>
+  <clippath id="clip050">
+    <rect x="0" y="0" width="2400" height="1600"></rect>
+  </clippath>
+</defs>
+<path clip-path="url(#clip050)" d="
+M0 1600 L2400 1600 L2400 0 L0 0  Z
+  " fill="#ffffff" fill-rule="evenodd" fill-opacity="1"></path>
+<defs>
+  <clippath id="clip051">
+    <rect x="480" y="0" width="1681" height="1600"></rect>
+  </clippath>
+</defs>
+<path clip-path="url(#clip050)" d="
+M287.366 1423.18 L2352.76 1423.18 L2352.76 47.2441 L287.366 47.2441  Z
+  " fill="#ffffff" fill-rule="evenodd" fill-opacity="1"></path>
+<defs>
+  <clippath id="clip052">
+    <rect x="287" y="47" width="2066" height="1377"></rect>
+  </clippath>
+</defs>
+<polyline clip-path="url(#clip052)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  287.366,1423.18 287.366,47.2441 
+  "></polyline>
+<polyline clip-path="url(#clip052)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  803.713,1423.18 803.713,47.2441 
+  "></polyline>
+<polyline clip-path="url(#clip052)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  1320.06,1423.18 1320.06,47.2441 
+  "></polyline>
+<polyline clip-path="url(#clip052)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  1836.41,1423.18 1836.41,47.2441 
+  "></polyline>
+<polyline clip-path="url(#clip052)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  2352.76,1423.18 2352.76,47.2441 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  287.366,1423.18 2352.76,1423.18 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  287.366,1423.18 287.366,1404.28 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  803.713,1423.18 803.713,1404.28 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  1320.06,1423.18 1320.06,1404.28 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  1836.41,1423.18 1836.41,1404.28 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  2352.76,1423.18 2352.76,1404.28 
+  "></polyline>
+<path clip-path="url(#clip050)" d="M233.894 1468.75 L263.57 1468.75 L263.57 1472.69 L233.894 1472.69 L233.894 1468.75 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M274.472 1481.64 L282.111 1481.64 L282.111 1455.28 L273.801 1456.95 L273.801 1452.69 L282.065 1451.02 L286.741 1451.02 L286.741 1481.64 L294.38 1481.64 L294.38 1485.58 L274.472 1485.58 L274.472 1481.64 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M303.824 1479.7 L308.708 1479.7 L308.708 1485.58 L303.824 1485.58 L303.824 1479.7 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M328.893 1454.1 Q325.282 1454.1 323.454 1457.66 Q321.648 1461.2 321.648 1468.33 Q321.648 1475.44 323.454 1479.01 Q325.282 1482.55 328.893 1482.55 Q332.528 1482.55 334.333 1479.01 Q336.162 1475.44 336.162 1468.33 Q336.162 1461.2 334.333 1457.66 Q332.528 1454.1 328.893 1454.1 M328.893 1450.39 Q334.704 1450.39 337.759 1455 Q340.838 1459.58 340.838 1468.33 Q340.838 1477.06 337.759 1481.67 Q334.704 1486.25 328.893 1486.25 Q323.083 1486.25 320.005 1481.67 Q316.949 1477.06 316.949 1468.33 Q316.949 1459.58 320.005 1455 Q323.083 1450.39 328.893 1450.39 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M750.739 1468.75 L780.415 1468.75 L780.415 1472.69 L750.739 1472.69 L750.739 1468.75 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M800.507 1454.1 Q796.896 1454.1 795.068 1457.66 Q793.262 1461.2 793.262 1468.33 Q793.262 1475.44 795.068 1479.01 Q796.896 1482.55 800.507 1482.55 Q804.142 1482.55 805.947 1479.01 Q807.776 1475.44 807.776 1468.33 Q807.776 1461.2 805.947 1457.66 Q804.142 1454.1 800.507 1454.1 M800.507 1450.39 Q806.318 1450.39 809.373 1455 Q812.452 1459.58 812.452 1468.33 Q812.452 1477.06 809.373 1481.67 Q806.318 1486.25 800.507 1486.25 Q794.697 1486.25 791.619 1481.67 Q788.563 1477.06 788.563 1468.33 Q788.563 1459.58 791.619 1455 Q794.697 1450.39 800.507 1450.39 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M820.669 1479.7 L825.554 1479.7 L825.554 1485.58 L820.669 1485.58 L820.669 1479.7 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M835.785 1451.02 L854.141 1451.02 L854.141 1454.96 L840.067 1454.96 L840.067 1463.43 Q841.086 1463.08 842.104 1462.92 Q843.123 1462.73 844.141 1462.73 Q849.928 1462.73 853.308 1465.9 Q856.688 1469.08 856.688 1474.49 Q856.688 1480.07 853.215 1483.17 Q849.743 1486.25 843.424 1486.25 Q841.248 1486.25 838.979 1485.88 Q836.734 1485.51 834.327 1484.77 L834.327 1480.07 Q836.41 1481.2 838.632 1481.76 Q840.854 1482.32 843.331 1482.32 Q847.336 1482.32 849.674 1480.21 Q852.012 1478.1 852.012 1474.49 Q852.012 1470.88 849.674 1468.77 Q847.336 1466.67 843.331 1466.67 Q841.456 1466.67 839.581 1467.08 Q837.729 1467.5 835.785 1468.38 L835.785 1451.02 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M1297.45 1454.1 Q1293.83 1454.1 1292.01 1457.66 Q1290.2 1461.2 1290.2 1468.33 Q1290.2 1475.44 1292.01 1479.01 Q1293.83 1482.55 1297.45 1482.55 Q1301.08 1482.55 1302.89 1479.01 Q1304.71 1475.44 1304.71 1468.33 Q1304.71 1461.2 1302.89 1457.66 Q1301.08 1454.1 1297.45 1454.1 M1297.45 1450.39 Q1303.26 1450.39 1306.31 1455 Q1309.39 1459.58 1309.39 1468.33 Q1309.39 1477.06 1306.31 1481.67 Q1303.26 1486.25 1297.45 1486.25 Q1291.64 1486.25 1288.56 1481.67 Q1285.5 1477.06 1285.5 1468.33 Q1285.5 1459.58 1288.56 1455 Q1291.64 1450.39 1297.45 1450.39 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M1317.61 1479.7 L1322.49 1479.7 L1322.49 1485.58 L1317.61 1485.58 L1317.61 1479.7 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M1342.68 1454.1 Q1339.07 1454.1 1337.24 1457.66 Q1335.43 1461.2 1335.43 1468.33 Q1335.43 1475.44 1337.24 1479.01 Q1339.07 1482.55 1342.68 1482.55 Q1346.31 1482.55 1348.12 1479.01 Q1349.95 1475.44 1349.95 1468.33 Q1349.95 1461.2 1348.12 1457.66 Q1346.31 1454.1 1342.68 1454.1 M1342.68 1450.39 Q1348.49 1450.39 1351.54 1455 Q1354.62 1459.58 1354.62 1468.33 Q1354.62 1477.06 1351.54 1481.67 Q1348.49 1486.25 1342.68 1486.25 Q1336.87 1486.25 1333.79 1481.67 Q1330.73 1477.06 1330.73 1468.33 Q1330.73 1459.58 1333.79 1455 Q1336.87 1450.39 1342.68 1450.39 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M1814.29 1454.1 Q1810.68 1454.1 1808.85 1457.66 Q1807.05 1461.2 1807.05 1468.33 Q1807.05 1475.44 1808.85 1479.01 Q1810.68 1482.55 1814.29 1482.55 Q1817.92 1482.55 1819.73 1479.01 Q1821.56 1475.44 1821.56 1468.33 Q1821.56 1461.2 1819.73 1457.66 Q1817.92 1454.1 1814.29 1454.1 M1814.29 1450.39 Q1820.1 1450.39 1823.16 1455 Q1826.23 1459.58 1826.23 1468.33 Q1826.23 1477.06 1823.16 1481.67 Q1820.1 1486.25 1814.29 1486.25 Q1808.48 1486.25 1805.4 1481.67 Q1802.35 1477.06 1802.35 1468.33 Q1802.35 1459.58 1805.4 1455 Q1808.48 1450.39 1814.29 1450.39 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M1834.45 1479.7 L1839.34 1479.7 L1839.34 1485.58 L1834.45 1485.58 L1834.45 1479.7 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M1849.57 1451.02 L1867.92 1451.02 L1867.92 1454.96 L1853.85 1454.96 L1853.85 1463.43 Q1854.87 1463.08 1855.89 1462.92 Q1856.91 1462.73 1857.92 1462.73 Q1863.71 1462.73 1867.09 1465.9 Q1870.47 1469.08 1870.47 1474.49 Q1870.47 1480.07 1867 1483.17 Q1863.53 1486.25 1857.21 1486.25 Q1855.03 1486.25 1852.76 1485.88 Q1850.52 1485.51 1848.11 1484.77 L1848.11 1480.07 Q1850.19 1481.2 1852.42 1481.76 Q1854.64 1482.32 1857.11 1482.32 Q1861.12 1482.32 1863.46 1480.21 Q1865.79 1478.1 1865.79 1474.49 Q1865.79 1470.88 1863.46 1468.77 Q1861.12 1466.67 1857.11 1466.67 Q1855.24 1466.67 1853.36 1467.08 Q1851.51 1467.5 1849.57 1468.38 L1849.57 1451.02 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M2319.91 1481.64 L2327.55 1481.64 L2327.55 1455.28 L2319.24 1456.95 L2319.24 1452.69 L2327.5 1451.02 L2332.18 1451.02 L2332.18 1481.64 L2339.82 1481.64 L2339.82 1485.58 L2319.91 1485.58 L2319.91 1481.64 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M2349.26 1479.7 L2354.14 1479.7 L2354.14 1485.58 L2349.26 1485.58 L2349.26 1479.7 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M2374.33 1454.1 Q2370.72 1454.1 2368.89 1457.66 Q2367.08 1461.2 2367.08 1468.33 Q2367.08 1475.44 2368.89 1479.01 Q2370.72 1482.55 2374.33 1482.55 Q2377.96 1482.55 2379.77 1479.01 Q2381.6 1475.44 2381.6 1468.33 Q2381.6 1461.2 2379.77 1457.66 Q2377.96 1454.1 2374.33 1454.1 M2374.33 1450.39 Q2380.14 1450.39 2383.2 1455 Q2386.27 1459.58 2386.27 1468.33 Q2386.27 1477.06 2383.2 1481.67 Q2380.14 1486.25 2374.33 1486.25 Q2368.52 1486.25 2365.44 1481.67 Q2362.39 1477.06 2362.39 1468.33 Q2362.39 1459.58 2365.44 1455 Q2368.52 1450.39 2374.33 1450.39 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M1336.68 1532.4 L1323.78 1549.74 L1337.34 1568.04 L1330.44 1568.04 L1320.06 1554.04 L1309.68 1568.04 L1302.78 1568.04 L1316.62 1549.39 L1303.96 1532.4 L1310.86 1532.4 L1320.32 1545.1 L1329.77 1532.4 L1336.68 1532.4 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><polyline clip-path="url(#clip052)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  287.366,1423.18 2352.76,1423.18 
+  "></polyline>
+<polyline clip-path="url(#clip052)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  287.366,1079.2 2352.76,1079.2 
+  "></polyline>
+<polyline clip-path="url(#clip052)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  287.366,735.212 2352.76,735.212 
+  "></polyline>
+<polyline clip-path="url(#clip052)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  287.366,391.228 2352.76,391.228 
+  "></polyline>
+<polyline clip-path="url(#clip052)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:2; stroke-opacity:0.1; fill:none" points="
+  287.366,47.2441 2352.76,47.2441 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  287.366,1423.18 287.366,47.2441 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  287.366,1423.18 306.264,1423.18 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  287.366,1079.2 306.264,1079.2 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  287.366,735.212 306.264,735.212 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  287.366,391.228 306.264,391.228 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  287.366,47.2441 306.264,47.2441 
+  "></polyline>
+<path clip-path="url(#clip050)" d="M114.26 1423.63 L143.936 1423.63 L143.936 1427.57 L114.26 1427.57 L114.26 1423.63 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M164.028 1408.98 Q160.417 1408.98 158.589 1412.54 Q156.783 1416.08 156.783 1423.21 Q156.783 1430.32 158.589 1433.89 Q160.417 1437.43 164.028 1437.43 Q167.663 1437.43 169.468 1433.89 Q171.297 1430.32 171.297 1423.21 Q171.297 1416.08 169.468 1412.54 Q167.663 1408.98 164.028 1408.98 M164.028 1405.27 Q169.839 1405.27 172.894 1409.88 Q175.973 1414.46 175.973 1423.21 Q175.973 1431.94 172.894 1436.55 Q169.839 1441.13 164.028 1441.13 Q158.218 1441.13 155.14 1436.55 Q152.084 1431.94 152.084 1423.21 Q152.084 1414.46 155.14 1409.88 Q158.218 1405.27 164.028 1405.27 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M184.19 1434.58 L189.075 1434.58 L189.075 1440.46 L184.19 1440.46 L184.19 1434.58 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M199.306 1405.9 L217.662 1405.9 L217.662 1409.84 L203.588 1409.84 L203.588 1418.31 Q204.607 1417.96 205.625 1417.8 Q206.644 1417.61 207.662 1417.61 Q213.449 1417.61 216.829 1420.78 Q220.209 1423.96 220.209 1429.37 Q220.209 1434.95 216.736 1438.05 Q213.264 1441.13 206.945 1441.13 Q204.769 1441.13 202.5 1440.76 Q200.255 1440.39 197.848 1439.65 L197.848 1434.95 Q199.931 1436.08 202.153 1436.64 Q204.375 1437.2 206.852 1437.2 Q210.857 1437.2 213.195 1435.09 Q215.533 1432.98 215.533 1429.37 Q215.533 1425.76 213.195 1423.65 Q210.857 1421.55 206.852 1421.55 Q204.977 1421.55 203.102 1421.96 Q201.25 1422.38 199.306 1423.26 L199.306 1405.9 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M239.422 1408.98 Q235.81 1408.98 233.982 1412.54 Q232.176 1416.08 232.176 1423.21 Q232.176 1430.32 233.982 1433.89 Q235.81 1437.43 239.422 1437.43 Q243.056 1437.43 244.861 1433.89 Q246.69 1430.32 246.69 1423.21 Q246.69 1416.08 244.861 1412.54 Q243.056 1408.98 239.422 1408.98 M239.422 1405.27 Q245.232 1405.27 248.287 1409.88 Q251.366 1414.46 251.366 1423.21 Q251.366 1431.94 248.287 1436.55 Q245.232 1441.13 239.422 1441.13 Q233.611 1441.13 230.533 1436.55 Q227.477 1431.94 227.477 1423.21 Q227.477 1414.46 230.533 1409.88 Q233.611 1405.27 239.422 1405.27 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M115.256 1079.65 L144.931 1079.65 L144.931 1083.58 L115.256 1083.58 L115.256 1079.65 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M165.024 1064.99 Q161.413 1064.99 159.584 1068.56 Q157.778 1072.1 157.778 1079.23 Q157.778 1086.34 159.584 1089.9 Q161.413 1093.44 165.024 1093.44 Q168.658 1093.44 170.464 1089.9 Q172.292 1086.34 172.292 1079.23 Q172.292 1072.1 170.464 1068.56 Q168.658 1064.99 165.024 1064.99 M165.024 1061.29 Q170.834 1061.29 173.889 1065.9 Q176.968 1070.48 176.968 1079.23 Q176.968 1087.96 173.889 1092.56 Q170.834 1097.15 165.024 1097.15 Q159.214 1097.15 156.135 1092.56 Q153.079 1087.96 153.079 1079.23 Q153.079 1070.48 156.135 1065.9 Q159.214 1061.29 165.024 1061.29 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M185.186 1090.6 L190.07 1090.6 L190.07 1096.48 L185.186 1096.48 L185.186 1090.6 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M204.283 1092.54 L220.602 1092.54 L220.602 1096.48 L198.658 1096.48 L198.658 1092.54 Q201.32 1089.79 205.903 1085.16 Q210.51 1080.5 211.69 1079.16 Q213.936 1076.64 214.815 1074.9 Q215.718 1073.14 215.718 1071.45 Q215.718 1068.7 213.774 1066.96 Q211.852 1065.23 208.75 1065.23 Q206.551 1065.23 204.098 1065.99 Q201.667 1066.75 198.889 1068.3 L198.889 1063.58 Q201.713 1062.45 204.167 1061.87 Q206.621 1061.29 208.658 1061.29 Q214.028 1061.29 217.223 1063.98 Q220.417 1066.66 220.417 1071.15 Q220.417 1073.28 219.607 1075.2 Q218.82 1077.1 216.713 1079.69 Q216.135 1080.36 213.033 1083.58 Q209.931 1086.78 204.283 1092.54 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M230.463 1061.92 L248.82 1061.92 L248.82 1065.85 L234.746 1065.85 L234.746 1074.32 Q235.764 1073.98 236.783 1073.81 Q237.801 1073.63 238.82 1073.63 Q244.607 1073.63 247.986 1076.8 Q251.366 1079.97 251.366 1085.39 Q251.366 1090.97 247.894 1094.07 Q244.421 1097.15 238.102 1097.15 Q235.926 1097.15 233.658 1096.78 Q231.412 1096.41 229.005 1095.67 L229.005 1090.97 Q231.088 1092.1 233.31 1092.66 Q235.533 1093.21 238.009 1093.21 Q242.014 1093.21 244.352 1091.11 Q246.69 1089 246.69 1085.39 Q246.69 1081.78 244.352 1079.67 Q242.014 1077.56 238.009 1077.56 Q236.135 1077.56 234.26 1077.98 Q232.408 1078.4 230.463 1079.28 L230.463 1061.92 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M164.028 721.011 Q160.417 721.011 158.589 724.575 Q156.783 728.117 156.783 735.247 Q156.783 742.353 158.589 745.918 Q160.417 749.46 164.028 749.46 Q167.663 749.46 169.468 745.918 Q171.297 742.353 171.297 735.247 Q171.297 728.117 169.468 724.575 Q167.663 721.011 164.028 721.011 M164.028 717.307 Q169.839 717.307 172.894 721.913 Q175.973 726.497 175.973 735.247 Q175.973 743.973 172.894 748.58 Q169.839 753.163 164.028 753.163 Q158.218 753.163 155.14 748.58 Q152.084 743.973 152.084 735.247 Q152.084 726.497 155.14 721.913 Q158.218 717.307 164.028 717.307 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M184.19 746.612 L189.075 746.612 L189.075 752.492 L184.19 752.492 L184.19 746.612 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M209.26 721.011 Q205.649 721.011 203.82 724.575 Q202.014 728.117 202.014 735.247 Q202.014 742.353 203.82 745.918 Q205.649 749.46 209.26 749.46 Q212.894 749.46 214.699 745.918 Q216.528 742.353 216.528 735.247 Q216.528 728.117 214.699 724.575 Q212.894 721.011 209.26 721.011 M209.26 717.307 Q215.07 717.307 218.125 721.913 Q221.204 726.497 221.204 735.247 Q221.204 743.973 218.125 748.58 Q215.07 753.163 209.26 753.163 Q203.449 753.163 200.371 748.58 Q197.315 743.973 197.315 735.247 Q197.315 726.497 200.371 721.913 Q203.449 717.307 209.26 717.307 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M239.422 721.011 Q235.81 721.011 233.982 724.575 Q232.176 728.117 232.176 735.247 Q232.176 742.353 233.982 745.918 Q235.81 749.46 239.422 749.46 Q243.056 749.46 244.861 745.918 Q246.69 742.353 246.69 735.247 Q246.69 728.117 244.861 724.575 Q243.056 721.011 239.422 721.011 M239.422 717.307 Q245.232 717.307 248.287 721.913 Q251.366 726.497 251.366 735.247 Q251.366 743.973 248.287 748.58 Q245.232 753.163 239.422 753.163 Q233.611 753.163 230.533 748.58 Q227.477 743.973 227.477 735.247 Q227.477 726.497 230.533 721.913 Q233.611 717.307 239.422 717.307 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M165.024 377.027 Q161.413 377.027 159.584 380.592 Q157.778 384.133 157.778 391.263 Q157.778 398.369 159.584 401.934 Q161.413 405.476 165.024 405.476 Q168.658 405.476 170.464 401.934 Q172.292 398.369 172.292 391.263 Q172.292 384.133 170.464 380.592 Q168.658 377.027 165.024 377.027 M165.024 373.323 Q170.834 373.323 173.889 377.929 Q176.968 382.513 176.968 391.263 Q176.968 399.99 173.889 404.596 Q170.834 409.179 165.024 409.179 Q159.214 409.179 156.135 404.596 Q153.079 399.99 153.079 391.263 Q153.079 382.513 156.135 377.929 Q159.214 373.323 165.024 373.323 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M185.186 402.628 L190.07 402.628 L190.07 408.508 L185.186 408.508 L185.186 402.628 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M204.283 404.573 L220.602 404.573 L220.602 408.508 L198.658 408.508 L198.658 404.573 Q201.32 401.818 205.903 397.189 Q210.51 392.536 211.69 391.193 Q213.936 388.67 214.815 386.934 Q215.718 385.175 215.718 383.485 Q215.718 380.73 213.774 378.994 Q211.852 377.258 208.75 377.258 Q206.551 377.258 204.098 378.022 Q201.667 378.786 198.889 380.337 L198.889 375.615 Q201.713 374.48 204.167 373.902 Q206.621 373.323 208.658 373.323 Q214.028 373.323 217.223 376.008 Q220.417 378.693 220.417 383.184 Q220.417 385.314 219.607 387.235 Q218.82 389.133 216.713 391.726 Q216.135 392.397 213.033 395.615 Q209.931 398.809 204.283 404.573 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M230.463 373.948 L248.82 373.948 L248.82 377.883 L234.746 377.883 L234.746 386.355 Q235.764 386.008 236.783 385.846 Q237.801 385.661 238.82 385.661 Q244.607 385.661 247.986 388.832 Q251.366 392.003 251.366 397.42 Q251.366 402.999 247.894 406.101 Q244.421 409.179 238.102 409.179 Q235.926 409.179 233.658 408.809 Q231.412 408.439 229.005 407.698 L229.005 402.999 Q231.088 404.133 233.31 404.689 Q235.533 405.244 238.009 405.244 Q242.014 405.244 244.352 403.138 Q246.69 401.031 246.69 397.42 Q246.69 393.809 244.352 391.703 Q242.014 389.596 238.009 389.596 Q236.135 389.596 234.26 390.013 Q232.408 390.429 230.463 391.309 L230.463 373.948 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M164.028 33.0428 Q160.417 33.0428 158.589 36.6076 Q156.783 40.1492 156.783 47.2788 Q156.783 54.3853 158.589 57.9501 Q160.417 61.4917 164.028 61.4917 Q167.663 61.4917 169.468 57.9501 Q171.297 54.3853 171.297 47.2788 Q171.297 40.1492 169.468 36.6076 Q167.663 33.0428 164.028 33.0428 M164.028 29.3391 Q169.839 29.3391 172.894 33.9456 Q175.973 38.5289 175.973 47.2788 Q175.973 56.0056 172.894 60.6121 Q169.839 65.1954 164.028 65.1954 Q158.218 65.1954 155.14 60.6121 Q152.084 56.0056 152.084 47.2788 Q152.084 38.5289 155.14 33.9456 Q158.218 29.3391 164.028 29.3391 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M184.19 58.6445 L189.075 58.6445 L189.075 64.5241 L184.19 64.5241 L184.19 58.6445 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M199.306 29.9641 L217.662 29.9641 L217.662 33.8993 L203.588 33.8993 L203.588 42.3714 Q204.607 42.0242 205.625 41.8622 Q206.644 41.677 207.662 41.677 Q213.449 41.677 216.829 44.8483 Q220.209 48.0196 220.209 53.4362 Q220.209 59.0149 216.736 62.1167 Q213.264 65.1954 206.945 65.1954 Q204.769 65.1954 202.5 64.825 Q200.255 64.4547 197.848 63.7139 L197.848 59.0149 Q199.931 60.1491 202.153 60.7047 Q204.375 61.2602 206.852 61.2602 Q210.857 61.2602 213.195 59.1538 Q215.533 57.0473 215.533 53.4362 Q215.533 49.8251 213.195 47.7186 Q210.857 45.6122 206.852 45.6122 Q204.977 45.6122 203.102 46.0288 Q201.25 46.4455 199.306 47.3251 L199.306 29.9641 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M239.422 33.0428 Q235.81 33.0428 233.982 36.6076 Q232.176 40.1492 232.176 47.2788 Q232.176 54.3853 233.982 57.9501 Q235.81 61.4917 239.422 61.4917 Q243.056 61.4917 244.861 57.9501 Q246.69 54.3853 246.69 47.2788 Q246.69 40.1492 244.861 36.6076 Q243.056 33.0428 239.422 33.0428 M239.422 29.3391 Q245.232 29.3391 248.287 33.9456 Q251.366 38.5289 251.366 47.2788 Q251.366 56.0056 248.287 60.6121 Q245.232 65.1954 239.422 65.1954 Q233.611 65.1954 230.533 60.6121 Q227.477 56.0056 227.477 47.2788 Q227.477 38.5289 230.533 33.9456 Q233.611 29.3391 239.422 29.3391 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M67.3143 733.525 Q73.68 736.008 75.6216 738.363 Q77.5631 740.718 77.5631 744.665 L77.5631 749.344 L72.6615 749.344 L72.6615 745.906 Q72.6615 743.487 71.5157 742.151 Q70.3699 740.814 66.1048 739.191 L63.4312 738.14 L28.3562 752.559 L28.3562 746.352 L56.238 735.212 L28.3562 724.072 L28.3562 717.865 L67.3143 733.525 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><polyline clip-path="url(#clip052)" style="stroke:#009af9; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  287.366,1423.18 803.713,563.22 1320.06,208.487 1836.41,107.668 2352.76,308.545 
+  "></polyline>
+<path clip-path="url(#clip050)" d="
+M2001.99 196.789 L2283.91 196.789 L2283.91 93.1086 L2001.99 93.1086  Z
+  " fill="#ffffff" fill-rule="evenodd" fill-opacity="1"></path>
+<polyline clip-path="url(#clip050)" style="stroke:#000000; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  2001.99,196.789 2283.91,196.789 2283.91,93.1086 2001.99,93.1086 2001.99,196.789 
+  "></polyline>
+<polyline clip-path="url(#clip050)" style="stroke:#009af9; stroke-linecap:butt; stroke-linejoin:round; stroke-width:4; stroke-opacity:1; fill:none" points="
+  2024.94,144.949 2162.63,144.949 
+  "></polyline>
+<path clip-path="url(#clip050)" d="M2199.42 164.636 Q2197.62 169.266 2195.91 170.678 Q2194.19 172.09 2191.32 172.09 L2187.92 172.09 L2187.92 168.525 L2190.42 168.525 Q2192.18 168.525 2193.15 167.692 Q2194.12 166.858 2195.3 163.756 L2196.07 161.812 L2185.58 136.303 L2190.1 136.303 L2198.2 156.581 L2206.3 136.303 L2210.81 136.303 L2199.42 164.636 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path><path clip-path="url(#clip050)" d="M2218.1 158.293 L2225.74 158.293 L2225.74 131.928 L2217.43 133.595 L2217.43 129.335 L2225.7 127.669 L2230.37 127.669 L2230.37 158.293 L2238.01 158.293 L2238.01 162.229 L2218.1 162.229 L2218.1 158.293 Z" fill="#000000" fill-rule="evenodd" fill-opacity="1"></path></svg>
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="We-can-also-use-Symbolics-by-passing-Symbolics-variables-to-the-function:">
+<a class="anchor" href="#We-can-also-use-Symbolics-by-passing-Symbolics-variables-to-the-function:" aria-hidden="true"><span class="octicon octicon-link"></span></a>We can also use Symbolics by passing Symbolics variables to the function:<a class="anchor-link" href="#We-can-also-use-Symbolics-by-passing-Symbolics-variables-to-the-function:"> </a>
+</h3>
+<p>This is a good way to "peek" into the inner workings of the Euler's Method and see what it's doing for every iteration.</p>
+<p>It also showcases the power of Symbolics. Due to  highly composable julia code, we can use Symbolics everywhere a number is expected.</p>
+
+</div>
+</div>
+</div>
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-julia"><pre><span></span><span class="nd">@variables</span> <span class="n">x₀</span><span class="p">,</span> <span class="n">y₀</span><span class="p">,</span> <span class="n">step</span> <span class="c">#defines the symbollics variables</span>
+<span class="n">t</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span>  <span class="n">EulerMethod</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">x₀</span><span class="p">,</span> <span class="n">y₀</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_text output_subarea ">
+<pre>(Num[x₀, step + x₀, x₀ + 2step, x₀ + 3step, x₀ + 4step], Num[y₀, y₀ + step*(y₀^2 - x₀), y₀ + step*(y₀^2 - x₀) + step*((y₀ + step*(y₀^2 - x₀))^2 - step - x₀), y₀ + step*(y₀^2 - x₀) + step*((y₀ + step*(y₀^2 - x₀))^2 - step - x₀) + step*((y₀ + step*(y₀^2 - x₀) + step*((y₀ + step*(y₀^2 - x₀))^2 - step - x₀))^2 - 2step - x₀), y₀ + step*(y₀^2 - x₀) + step*((y₀ + step*(y₀^2 - x₀))^2 - step - x₀) + step*((y₀ + step*(y₀^2 - x₀) + step*((y₀ + step*(y₀^2 - x₀))^2 - step - x₀))^2 - 2step - x₀) + step*((y₀ + step*(y₀^2 - x₀) + step*((y₀ + step*(y₀^2 - x₀))^2 - step - x₀) + step*((y₀ + step*(y₀^2 - x₀) + step*((y₀ + step*(y₀^2 - x₀))^2 - step - x₀))^2 - 2step - x₀))^2 - 3step - x₀)])</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">t</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_latex output_subarea ">
+\begin{equation}
+\left[
+\begin{array}{c}
+x{_0} \\
+step + x{_0} \\
+x{_0} + 2 step \\
+x{_0} + 3 step \\
+x{_0} + 4 step \\
+\end{array}
+\right]
+\end{equation}
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+    
+    
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">y</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+<div class="output_area">
+
+
+
+<div class="output_latex output_subarea ">
+\begin{equation}
+\left[
+\begin{array}{c}
+y{_0} \\
+y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) \\
+y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) + step \left(  - step - x{_0} + \left( y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) \right)^{2} \right) \\
+y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) + step \left(  - step - x{_0} + \left( y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) \right)^{2} \right) + step \left(  - 2 step - x{_0} + \left( y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) + step \left(  - step - x{_0} + \left( y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) \right)^{2} \right) \right)^{2} \right) \\
+y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) + step \left(  - step - x{_0} + \left( y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) \right)^{2} \right) + step \left(  - 2 step - x{_0} + \left( y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) + step \left(  - step - x{_0} + \left( y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) \right)^{2} \right) \right)^{2} \right) + step \left(  - 3 step - x{_0} + \left( y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) + step \left(  - step - x{_0} + \left( y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) \right)^{2} \right) + step \left(  - 2 step - x{_0} + \left( y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) + step \left(  - step - x{_0} + \left( y{_0} + step \left(  - x{_0} + y{_0}^{2} \right) \right)^{2} \right) \right)^{2} \right) \right)^{2} \right) \\
+\end{array}
+\right]
+\end{equation}
+
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+    
+
+</div>
+
+
+
+  </div><!-- from https://github.com/utterance/utterances -->
+<script src="https://utteranc.es/client.js"
+        repo="gjunqueira-sys/J-J-Engineering-Blog"
+        issue-term="title"
+        label="blogpost-comment"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script><a class="u-url" href="/J-J-Engineering-Blog/jupyter/math/calculus/symbolics/julialang/2021/12/28/EulersMethod.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/J-J-Engineering-Blog/"></data>
+
+  <div class="wrapper">
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col">
+        <p class="feed-subscribe">
+          <a href="/J-J-Engineering-Blog/feed.xml">
+            <svg class="svg-icon orange">
+              <use xlink:href="/J-J-Engineering-Blog/assets/minima-social-icons.svg#rss"></use>
+            </svg><span>Subscribe</span>
+          </a>
+        </p>
+      </div>
+      <div class="footer-col">
+        <p>Management, Engineering, Software Development and other Musings.</p>
+      </div>
+    </div>
+
+    <div class="social-links"><ul class="social-media-list"><li><a rel="me" href="https://github.com/gjunqueira-sys" title="gjunqueira-sys"><svg class="svg-icon grey"><use xlink:href="/J-J-Engineering-Blog/assets/minima-social-icons.svg#github"></use></svg></a></li><li><a rel="me" href="https://twitter.com/gil_junqueira" title="gil_junqueira"><svg class="svg-icon grey"><use xlink:href="/J-J-Engineering-Blog/assets/minima-social-icons.svg#twitter"></use></svg></a></li></ul>
+</div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
