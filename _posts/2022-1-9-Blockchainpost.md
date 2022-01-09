@@ -1,9 +1,9 @@
 ---
 toc: true
 layout: post
-description: Just first post
-categories: [markdown, blockchain]
-title: Hyperledger: Challenges and Solutions
+description: Corporate Hyperledger- An Introduction
+categories: [blockchain]
+title: Hyperledger- Challenges and Solutions
 ---
 
 # Introduction
