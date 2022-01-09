@@ -42,5 +42,5 @@ The biggest obstacle is often convincing management teams and boards of director
 
 : Blockchain is a new technology that has the potential to disrupt and revolutionize how we manage our information, but it will take time for this world-changing technology to be adopted by all businesses.
 
-If you are interested in learning more about blockchain or if you would like help setting up your own private blockchain then please get in touch with J&J Engineering today! We offer both Hyperledger workshops as well as custom solutions development services . 
+If you are interested in learning more about blockchain or if you would like help setting up your own private blockchain then please get in touch with __J&J Engineering__ today! We offer both Hyperledger workshops as well as custom solutions development services . 
 
